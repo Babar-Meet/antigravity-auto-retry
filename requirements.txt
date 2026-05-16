@@ -1,2 +1,4 @@
 pyautogui
 opencv-python-headless
+pytesseract
+pillow

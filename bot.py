@@ -2,10 +2,16 @@ import pyautogui
 import time
 import sys
 import argparse
+import pytesseract
+from PIL import Image
 
 # Image paths
 RETRY_BUTTON_IMG = r"images\retrybutton.png"
 ALLOW_IN_WORKSPACE_IMG = r"images\allowinworkspace.png"
+
+# Expected OCR text for each button
+RETRY_BUTTON_OCR = "retry"
+ALLOW_IN_WORKSPACE_OCR = "allow"
 
 # Time interval to check for the button (in seconds)
 CHECK_INTERVAL_SECONDS = 5
@@ -17,6 +23,28 @@ def get_allowed_checks(selection):
         return [ALLOW_IN_WORKSPACE_IMG]
     else:
         return [RETRY_BUTTON_IMG, ALLOW_IN_WORKSPACE_IMG]
+
+def verify_button_with_ocr(location, img_path):
+    """Take screenshot around the detected location and verify using OCR."""
+    x, y = location
+    # Define region around the click point (adjust size as needed)
+    region_size = 100
+    left = x - region_size // 2
+    top = y - region_size // 2
+    width = region_size
+    height = region_size
+    
+    screenshot = pyautogui.screenshot(region=(left, top, width, height))
+    ocr_text = pytesseract.image_to_string(screenshot).lower()
+    
+    expected_text = RETRY_BUTTON_OCR if img_path == RETRY_BUTTON_IMG else ALLOW_IN_WORKSPACE_OCR
+    
+    if expected_text in ocr_text:
+        print(f"OCR verification passed: found '{expected_text}' in detected text")
+        return True
+    else:
+        print(f"OCR verification failed: expected '{expected_text}', got '{ocr_text[:50]}...'")
+        return False
 
 def auto_retry_bot(check_selection):
     targets = get_allowed_checks(check_selection)
@@ -31,12 +59,26 @@ def auto_retry_bot(check_selection):
             print(f"[{time.strftime('%H:%M:%S')}] Checking screen...")
             any_found = False
             for img_path in targets:
-                location = pyautogui.locateCenterOnScreen(img_path, confidence=0.7)
+                location = pyautogui.locateCenterOnScreen(img_path, confidence=0.6)
                 if location is not None:
-                    print(f"[{time.strftime('%H:%M:%S')}] {target_names[img_path]} found at {location}! Clicking...")
-                    pyautogui.click(location)
-                    time.sleep(2)
-                    any_found = True
+                    print(f"[{time.strftime('%H:%M:%S')}] {target_names[img_path]} found at {location}!")
+                    
+                    # Save current cursor position
+                    original_pos = pyautogui.position()
+                    print(f"Saved cursor position: {original_pos}")
+                    
+                    # Verify with OCR before clicking
+                    if verify_button_with_ocr(location, img_path):
+                        print(f"[{time.strftime('%H:%M:%S')}] {target_names[img_path]} verified. Clicking...")
+                        pyautogui.click(location)
+                        time.sleep(2)
+                        any_found = True
+                    else:
+                        print(f"[{time.strftime('%H:%M:%S')}] Skipping click due to OCR mismatch.")
+                    
+                    # Return cursor to original position
+                    pyautogui.moveTo(original_pos)
+                    print(f"Cursor returned to: {original_pos}")
                 else:
                     print(f"[{time.strftime('%H:%M:%S')}] {target_names[img_path]} not found this cycle.")
 
