@@ -26,11 +26,11 @@ def get_allowed_checks(selection):
 
 def verify_button_with_ocr(location, img_path):
     """Take screenshot around the detected location and verify using OCR."""
-    x, y = location
+    x, y = int(location.x), int(location.y)
     # Define region around the click point (adjust size as needed)
     region_size = 100
-    left = x - region_size // 2
-    top = y - region_size // 2
+    left = int(x - region_size // 2)
+    top = int(y - region_size // 2)
     width = region_size
     height = region_size
     
@@ -70,7 +70,7 @@ def auto_retry_bot(check_selection):
                     # Verify with OCR before clicking
                     if verify_button_with_ocr(location, img_path):
                         print(f"[{time.strftime('%H:%M:%S')}] {target_names[img_path]} verified. Clicking...")
-                        pyautogui.click(location)
+                        pyautogui.click(int(location.x), int(location.y))
                         time.sleep(2)
                         any_found = True
                     else:
