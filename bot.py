@@ -9,7 +9,7 @@ RETRY_BUTTON_IMG = r"images\retrybutton.png"
 ALLOW_IN_WORKSPACE_IMG = r"images\allowinworkspace.png"
 
 # Time interval to check for the button (in seconds)
-CHECK_INTERVAL_SECONDS = 5
+CHECK_INTERVAL_SECONDS = 9
 
 def get_allowed_checks(selection):
     if selection == "1":
